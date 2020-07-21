@@ -9,18 +9,13 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
-
-// Include GLEW
-#include <GL/glew.h>
-
-// Include GLFW
-#include <GLFW/glfw3.h>
 GLFWwindow* window;
 
-// Include GLM
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
 #include "../tinyobjloader/tiny_obj_loader.h"
@@ -47,41 +42,6 @@ void loadMesh(std::string path, tinyobj::attrib_t &attrib, std::vector<tinyobj::
 
     if (!ret) {
         exit(1);
-    }
-}
-
-
-void inspectMesh(const std::vector<tinyobj::shape_t> & shapes, const tinyobj::attrib_t & attrib) {
-    // Loop over shapes
-    std::cout << "Shape size " << shapes.size() << std::endl;
-    for (size_t s = 0; s < shapes.size(); s++) {
-        // Loop over faces(polygon)
-        size_t index_offset = 0;
-        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-            int fv = shapes[s].mesh.num_face_vertices[f];
-            // Loop over vertices in the face.
-            for (size_t v = 0; v < fv; v++) {
-                // access to vertex
-                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-                tinyobj::real_t vx = attrib.vertices[3*idx.vertex_index+0];
-                tinyobj::real_t vy = attrib.vertices[3*idx.vertex_index+1];
-                tinyobj::real_t vz = attrib.vertices[3*idx.vertex_index+2];
-                tinyobj::real_t nx = attrib.normals[3*idx.normal_index+0];
-                tinyobj::real_t ny = attrib.normals[3*idx.normal_index+1];
-                tinyobj::real_t nz = attrib.normals[3*idx.normal_index+2];
-                tinyobj::real_t tx = attrib.texcoords[2*idx.texcoord_index+0];
-                tinyobj::real_t ty = attrib.texcoords[2*idx.texcoord_index+1];
-
-                // Optional: vertex colors
-                // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
-                // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
-                // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
-            }
-            index_offset += fv;
-
-            // per-face material
-            shapes[s].mesh.material_ids[f];
-        }
     }
 }
 
@@ -164,16 +124,83 @@ int main() {
     std::vector<float> vertex_buffer_data = buffers[0];
     std::vector<float> color_buffer_data = buffers[1];
 
-//    // should have 12 * 3 * 3 = 108 data points : 12 traingles * 3 points * xyz
-//    std::cout << vertex_buffer_data.size() << std::endl;
-//    for (int i = 0; i < vertex_buffer_data.size(); i++) {
-//        if (i % 3 == 0 && i != 0) {
-//            std::cout << std::endl;
-//        }
-//        std::cout << vertex_buffer_data[i] << " ";
-//    }
+    static const GLfloat g_vertex_buffer_data[] = {
+            -1.0f,-1.0f,-1.0f,
+            -1.0f,-1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f,-1.0f,
+            -1.0f,-1.0f,-1.0f,
+            -1.0f, 1.0f,-1.0f,
+            1.0f,-1.0f, 1.0f,
+            -1.0f,-1.0f,-1.0f,
+            1.0f,-1.0f,-1.0f,
+            1.0f, 1.0f,-1.0f,
+            1.0f,-1.0f,-1.0f,
+            -1.0f,-1.0f,-1.0f,
+            -1.0f,-1.0f,-1.0f,
+            -1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f,-1.0f,
+            1.0f,-1.0f, 1.0f,
+            -1.0f,-1.0f, 1.0f,
+            -1.0f,-1.0f,-1.0f,
+            -1.0f, 1.0f, 1.0f,
+            -1.0f,-1.0f, 1.0f,
+            1.0f,-1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f,-1.0f,-1.0f,
+            1.0f, 1.0f,-1.0f,
+            1.0f,-1.0f,-1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f,-1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f,-1.0f,
+            -1.0f, 1.0f,-1.0f,
+            1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f,-1.0f,
+            -1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f,
+            -1.0f, 1.0f, 1.0f,
+            1.0f,-1.0f, 1.0f
+    };
 
-
+    static const GLfloat g_color_buffer_data[] = {
+            0.583f,  0.771f,  0.014f,
+            0.609f,  0.115f,  0.436f,
+            0.327f,  0.483f,  0.844f,
+            0.822f,  0.569f,  0.201f,
+            0.435f,  0.602f,  0.223f,
+            0.310f,  0.747f,  0.185f,
+            0.597f,  0.770f,  0.761f,
+            0.559f,  0.436f,  0.730f,
+            0.359f,  0.583f,  0.152f,
+            0.483f,  0.596f,  0.789f,
+            0.559f,  0.861f,  0.639f,
+            0.195f,  0.548f,  0.859f,
+            0.014f,  0.184f,  0.576f,
+            0.771f,  0.328f,  0.970f,
+            0.406f,  0.615f,  0.116f,
+            0.676f,  0.977f,  0.133f,
+            0.971f,  0.572f,  0.833f,
+            0.140f,  0.616f,  0.489f,
+            0.997f,  0.513f,  0.064f,
+            0.945f,  0.719f,  0.592f,
+            0.543f,  0.021f,  0.978f,
+            0.279f,  0.317f,  0.505f,
+            0.167f,  0.620f,  0.077f,
+            0.347f,  0.857f,  0.137f,
+            0.055f,  0.953f,  0.042f,
+            0.714f,  0.505f,  0.345f,
+            0.783f,  0.290f,  0.734f,
+            0.722f,  0.645f,  0.174f,
+            0.302f,  0.455f,  0.848f,
+            0.225f,  0.587f,  0.040f,
+            0.517f,  0.713f,  0.338f,
+            0.053f,  0.959f,  0.120f,
+            0.393f,  0.621f,  0.362f,
+            0.673f,  0.211f,  0.457f,
+            0.820f,  0.883f,  0.371f,
+            0.982f,  0.099f,  0.879f
+    };
 
     // initialize GLFW
     if (!glfwInit()) {
@@ -186,7 +213,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // open a window and create its OpenGL context
-    window = glfwCreateWindow(1024, 768, "Triangle", nullptr, nullptr);
+    window = glfwCreateWindow(1024, 768, "Cube", nullptr, nullptr);
     if (!window) {
         std::cout << "Fail to create window!" << std::endl;
     }
@@ -204,6 +231,14 @@ int main() {
     // dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+    // enable depth test
+    glEnable(GL_DEPTH_TEST);
+    // accept fragment if it's closer to the camera than the former one
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_CULL_FACE);
+
+    // create VAO
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -212,10 +247,28 @@ int main() {
     GLuint programID = LoadShaders( "../src/SimpleVertexShader.vertexshader", "../src/SimpleFragmentShader.fragmentshader" );
     std::cout << "Program ID " << programID << std::endl;
 
+    // get a handle for MVP transform
+    GLuint MatrixID = glGetUniformLocation(programID, "MVP");
+
+    // perspective matrix
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+
+    // camera matrix
+    glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+    // model matrix : identity matrix, model at origin
+    glm::mat4 model = glm::mat4(1.0f);
+
+    glm::mat4 mvp = projection * view * model;
+
+    std::cout << "mvp matrix " << glm::to_string(mvp) << std::endl;
+
+    // prepare mesh data
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data.data()), vertex_buffer_data.data(), GL_STATIC_DRAW);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data.data()), vertex_buffer_data.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
 //    GLuint color_buffer;
 //    glGenBuffers(1, &color_buffer);
@@ -229,6 +282,9 @@ int main() {
         // use the shader
         glUseProgram(programID);
 
+        // send transforms
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
+
         // 1st attribute buffer : vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -241,7 +297,7 @@ int main() {
                 (void*) 0
                 );
 
-        // draw the triangle!
+        // draw the geometry!
         glDrawArrays(GL_TRIANGLES, 0, 12*3);
 
         glDisableVertexAttribArray(0);
