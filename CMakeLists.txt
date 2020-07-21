@@ -16,10 +16,13 @@ find_package(glfw3 REQUIRED)
 # Add GLEW
 find_package(GLEW REQUIRED)
 
+# add glm
+find_package(glm REQUIRED)
+
 # Add objloader
 add_subdirectory(tinyobjloader)
 
 add_executable (sandbox src/render.cpp src/shader.hpp src/shader.cpp)
 
-target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW)
+target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW glm)
 
