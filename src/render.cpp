@@ -30,7 +30,7 @@ void loadMesh(std::string path, tinyobj::attrib_t &attrib, std::vector<tinyobj::
     std::string err;
 
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str());
-    std::cout << "return value " << ret << std::endl;
+    std::cout << "LoadObj: return value " << ret << std::endl;
 
     if (!warn.empty()) {
         std::cout << warn << std::endl;
@@ -46,7 +46,7 @@ void loadMesh(std::string path, tinyobj::attrib_t &attrib, std::vector<tinyobj::
 }
 
 
-std::vector<std::vector<float>> singleMesh2Buffer(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib) {
+std::vector<float> singleMesh2Buffer(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib) {
     std::cout << "combining a single mesh's face triangles to buffer data for OpenGL VBO..." << std::endl;
     std::vector<float> vertices_buffer;
     std::vector<float> colors_buffer;
@@ -64,18 +64,11 @@ std::vector<std::vector<float>> singleMesh2Buffer(const tinyobj::shape_t & shape
             vertices_buffer.push_back(vx);
             vertices_buffer.push_back(vy);
             vertices_buffer.push_back(vz);
-
-            tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
-            tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
-            tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
-            colors_buffer.push_back(red);
-            colors_buffer.push_back(green);
-            colors_buffer.push_back(blue);
         }
         index_offset += fv;
     }
 
-    return {vertices_buffer, colors_buffer};
+    return vertices_buffer;
 }
 
 
@@ -108,10 +101,23 @@ std::vector<float> multipleMesh2Buffer(const std::vector<tinyobj::shape_t> & sha
     return buffer;
 }
 
+template <class T>
+void normalizeVector(std::vector<T> & vec) {
+    T val = 0;
+    for (int i = 0; i < vec.size(); i++) {
+        val = val > abs(vec[i]) ? val : abs(vec[i]);
+    }
+
+    for (int i = 0; i < vec.size(); i++) {
+        vec[i] /= val ;
+    }
+}
 
 int main() {
     // load objs
     std::string inputfile = "../data/cube.obj";
+//    std::string inputfile = "../data/airboat.obj";
+//    std::string inputfile = "../data/teddy.obj";
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -120,87 +126,10 @@ int main() {
     std::cout << "num of shapes ";
     std::cout << shapes.size() << std::endl;
 
-    auto buffers = singleMesh2Buffer(shapes[0], attrib);
-    std::vector<float> vertex_buffer_data = buffers[0];
-    std::vector<float> color_buffer_data = buffers[1];
-
-    static const GLfloat g_vertex_buffer_data[] = {
-            -1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f, 1.0f,
-            -1.0f,-1.0f,-1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f,-1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f,-1.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f,-1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,-1.0f, 1.0f
-    };
-
-    static const GLfloat g_color_buffer_data[] = {
-            0.583f,  0.771f,  0.014f,
-            0.609f,  0.115f,  0.436f,
-            0.327f,  0.483f,  0.844f,
-            0.822f,  0.569f,  0.201f,
-            0.435f,  0.602f,  0.223f,
-            0.310f,  0.747f,  0.185f,
-            0.597f,  0.770f,  0.761f,
-            0.559f,  0.436f,  0.730f,
-            0.359f,  0.583f,  0.152f,
-            0.483f,  0.596f,  0.789f,
-            0.559f,  0.861f,  0.639f,
-            0.195f,  0.548f,  0.859f,
-            0.014f,  0.184f,  0.576f,
-            0.771f,  0.328f,  0.970f,
-            0.406f,  0.615f,  0.116f,
-            0.676f,  0.977f,  0.133f,
-            0.971f,  0.572f,  0.833f,
-            0.140f,  0.616f,  0.489f,
-            0.997f,  0.513f,  0.064f,
-            0.945f,  0.719f,  0.592f,
-            0.543f,  0.021f,  0.978f,
-            0.279f,  0.317f,  0.505f,
-            0.167f,  0.620f,  0.077f,
-            0.347f,  0.857f,  0.137f,
-            0.055f,  0.953f,  0.042f,
-            0.714f,  0.505f,  0.345f,
-            0.783f,  0.290f,  0.734f,
-            0.722f,  0.645f,  0.174f,
-            0.302f,  0.455f,  0.848f,
-            0.225f,  0.587f,  0.040f,
-            0.517f,  0.713f,  0.338f,
-            0.053f,  0.959f,  0.120f,
-            0.393f,  0.621f,  0.362f,
-            0.673f,  0.211f,  0.457f,
-            0.820f,  0.883f,  0.371f,
-            0.982f,  0.099f,  0.879f
-    };
+//    auto vertex_buffer_data = singleMesh2Buffer(shapes[0], attrib);
+    auto vertex_buffer_data = multipleMesh2Buffer(shapes, attrib);
+//    normalizeVector(vertex_buffer_data);
+    std::cout << "number of vertices " << vertex_buffer_data.size() << std::endl;
 
     // initialize GLFW
     if (!glfwInit()) {
@@ -261,23 +190,22 @@ int main() {
 
     glm::mat4 mvp = projection * view * model;
 
-    std::cout << "mvp matrix " << glm::to_string(mvp) << std::endl;
-
     // prepare mesh data
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data.data()), vertex_buffer_data.data(), GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data.size() * sizeof(vertex_buffer_data[0]), vertex_buffer_data.data(), GL_STATIC_DRAW);
 
-//    GLuint color_buffer;
-//    glGenBuffers(1, &color_buffer);
-//    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data.data()), color_buffer_data.data(), GL_STATIC_DRAW);
+    // read depth
+    int x = 100;
+    int y = 100;
+    float z = 0;
+    glReadPixels(x,y,1,1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+    std::cout << "Depth value of the selecetd pixel is " << z << std::endl;
 
     do {
         // clear the screen
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // use the shader
         glUseProgram(programID);
@@ -301,6 +229,7 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 12*3);
 
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
 
         // swap buffers
         glfwSwapBuffers(window);
