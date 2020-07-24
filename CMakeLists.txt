@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.5.1)
-project (sandbox)
+project (sandbox LANGUAGES CXX CUDA)
 
 # add OpenGL
 find_package(OpenGL REQUIRED)
@@ -16,13 +16,24 @@ find_package(glfw3 REQUIRED)
 # Add GLEW
 find_package(GLEW REQUIRED)
 
-# add glm
-find_package(glm REQUIRED)
+#include_directories("${CMAKE_SOURCE_DIR}/sturglib")
+
+#file(GLOB STURG_SOURCES
+#        "sturglib/*.h*"
+#        "sturglib/*.cpp"
+#        "sturglib/*.cu"
+#        )
+
+#add_executable (sandbox "src/render.cpp" ${STURG_SOURCES} "src/shader.cpp" "src/shader.hpp")
+add_executable (sandbox "src/hello.cpp" "src/shader.cpp" "src/shader.hpp")
+
+target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW )
 
 # Add objloader
-add_subdirectory(tinyobjloader)
+#add_subdirectory(tinyobjloader)
 
-add_executable (sandbox src/render.cpp src/shader.hpp src/shader.cpp)
+#add_executable (sandbox src/render.cpp src/shader.hpp src/shader.cpp)
 
-target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW glm)
+#target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW )
 
+#set_target_properties(sandbox PROPERTIES CXX_STANDARD 11)

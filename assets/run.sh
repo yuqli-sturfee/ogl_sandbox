@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/tensorrt/lib/:/usr/lib64/ DISPLAY=:0 ./SturgRender -f extern_param_single.csv -w 1280 -h 720 -r 500 -t 553134.870415 -g 4183102.60824 -v 40 -l 1280 -m 720 -o out -c 1.5 -e -s windowLoc.csv -a pca_128_mean.csv -b pca_128_coeff.csv
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/tensorrt/lib/:/usr/lib64/ DISPLAY=:0 ./SturgRender -u 10N -f extern_param_single.csv -w 640 -h 360 -r 500 -t 553296.755 -g 4183286.188 -v 40 -l 640 -m 360 -o /output/ -c 1.5 -e -s windows.csv
