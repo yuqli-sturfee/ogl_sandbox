@@ -17,19 +17,102 @@ GLFWwindow* window;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
+#include "../tinyobjloader/tiny_obj_loader.h"
+
 #include "shader.hpp"
 
-#include "sturg_helper_func.hpp"
-#include "sturg_loader.hpp"
-#include "sturg_search_params.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace glm;
 
-void printVector(const std::vector<float> &vec) {
-    for (int i = 0; i < vec.size(); i++) {
-        std::cout << vec[i] << " ";
+void loadMesh(std::string path, tinyobj::attrib_t &attrib, std::vector<tinyobj::shape_t> &shapes, std::vector<tinyobj::material_t> materials) {
+    // Load custom data
+    std::string warn;
+    std::string err;
+
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str());
+    std::cout << "LoadObj: return value " << ret << std::endl;
+
+    if (!warn.empty()) {
+        std::cout << warn << std::endl;
     }
-    std::cout << std::endl;
+
+    if (!err.empty()) {
+        std::cerr << err << std::endl;
+    }
+
+    if (!ret) {
+        exit(1);
+    }
+}
+
+
+std::vector<float> singleMesh2Buffer(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib) {
+    std::cout << "combining a single mesh's face triangles to buffer data for OpenGL VBO..." << std::endl;
+    std::vector<float> vertices_buffer;
+    std::vector<float> colors_buffer;
+    // Loop over faces(polygon)
+    size_t index_offset = 0;
+    for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+        int fv = shape.mesh.num_face_vertices[f];
+        // Loop over vertices in the face.
+        for (size_t v = 0; v < fv; v++) {
+            // access to vertex
+            tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+            tinyobj::real_t vx = attrib.vertices[3*idx.vertex_index+0];
+            tinyobj::real_t vy = attrib.vertices[3*idx.vertex_index+1];
+            tinyobj::real_t vz = attrib.vertices[3*idx.vertex_index+2];
+            vertices_buffer.push_back(vx);
+            vertices_buffer.push_back(vy);
+            vertices_buffer.push_back(vz);
+        }
+        index_offset += fv;
+    }
+
+    return vertices_buffer;
+}
+
+
+std::vector<float> multipleMesh2Buffer(const std::vector<tinyobj::shape_t> & shapes, const tinyobj::attrib_t & attrib) {
+    std::cout << "combining multiple meshs' face triangles to buffer data for OpenGL VBO..." << std::endl;
+    std::cout << "shape size " << shapes.size() << std::endl;
+
+    std::vector<float> buffer;  // store results
+
+    for (size_t s = 0; s < shapes.size(); s++) {
+        // Loop over faces(polygon)
+        size_t index_offset = 0;
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+            int fv = shapes[s].mesh.num_face_vertices[f];
+            // Loop over vertices in the face.
+            for (size_t v = 0; v < fv; v++) {
+                // access to vertex
+                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+                tinyobj::real_t vx = attrib.vertices[3*idx.vertex_index+0];
+                tinyobj::real_t vy = attrib.vertices[3*idx.vertex_index+1];
+                tinyobj::real_t vz = attrib.vertices[3*idx.vertex_index+2];
+                // store results to buffer
+                buffer.push_back(vx);
+                buffer.push_back(vy);
+                buffer.push_back(vz);
+            }
+            index_offset += fv;
+        }
+    }
+    return buffer;
+}
+
+template <class T>
+void normalizeVector(std::vector<T> & vec) {
+    T val = 0;
+    for (int i = 0; i < vec.size(); i++) {
+        val = val > abs(vec[i]) ? val : abs(vec[i]);
+    }
+
+    for (int i = 0; i < vec.size(); i++) {
+        vec[i] /= val ;
+    }
 }
 
 
@@ -115,81 +198,22 @@ void computeMatricesFromInputs(glm::mat4 & ProjectionMatrix, glm::mat4 & ViewMat
     lastTime = currentTime;
 }
 
+
 int main() {
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize parameters
-    //////////////////////////////////////////////////////////////////////////////////////////
+    // load objs
+    std::string inputfile = "../data/obj/cube.obj";
+//    std::string inputfile = "../data/airboat.obj";
+//    std::string inputfile = "../data/teddy.obj";
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    loadMesh(inputfile, attrib, shapes, materials);
 
-    // load config file
-    auto config_params = loadConfigFile("config.ini");
+    std::cout << "num of shapes ";
+    std::cout << shapes.size() << std::endl;
 
-    // read command line params
-    SturgInputParams input_params;
-    input_params.csv_file_path = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/extern_param_single.csv";
-    input_params.proj_matrix_csv_file = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/proj_matrix_portrait.csv";
-    input_params.window_origins_file = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/windows.csv";
-    input_params.center_x = 553296.755;
-    input_params.center_y = 4183286.188;
-    input_params.fov = 45;
-    input_params.scene_width = 640;
-    input_params.scene_height = 360;
-    input_params.utm_prefix = "10N";
-    input_params.radius = 500;
-    input_params.image_width = 640;
-    input_params.image_height = 360;
-
-    // update input_params with config init data
-    input_params.model_dir = config_params["geometry_models"];
-    input_params.terrain_dir = config_params["geometry_terrain"];
-
-    std::cout << "Using: " << std::endl;
-    std::cout << " > Geometry Models Dir: " << input_params.model_dir << std::endl;
-    std::cout << " > Geometry Terrain Dir: " << input_params.terrain_dir << std::endl;
-
-    std::cout << " > Win Origins File: " << input_params.window_origins_file << std::endl;
-    std::cout << " > utm prefix: " << input_params.utm_prefix << std::endl;
-
-    // parser
-    sturgSearchParamData searchParamData;
-    searchParamData.init(input_params);
-    searchParamData.process();
-
-    // get search params and other constsnt params for the scene: w,h,r etc
-    std::vector<SturgCameraParameters> cam_search_params = searchParamData.getSearchParams();
-
-#if defined(CNN) && defined(CAFFE_OUT)
-    std::vector<std::array<float, 2>> window_orig_params = searchParamData.getWindowOrigins();
-#endif
-
-    // TO DO: do not proceed of cam params size is zero
-    if (cam_search_params.empty()) {
-        std::cout << "Error: filtered cam params count is zero . exiting()";
-        return EXIT_FAILURE;
-    }
-
-    std::vector<float> proj_matrix = searchParamData.getProjMatrix();
-    printVector(proj_matrix);
-
-    // loader
-    SturgLoader sturg_loader;
-    sturg_loader.init(input_params);
-    sturg_loader.process();
-
-    // get rendering data
-    std::vector<GLfloat> vertices = sturg_loader.getVertices();
-    std::vector<GLfloat> colors = sturg_loader.getColors();
-    std::vector<GLuint> indices = sturg_loader.getIndices();
-
-    std::cout << " >> vertices: " << vertices.size() << std::endl;
-    std::cout << " >> colors: " << colors.size() << std::endl;
-    std::cout << " >> indices: " << indices.size() << std::endl;
-
-    std::cout << "Finished!\n";
-
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize OpenGL
-    //////////////////////////////////////////////////////////////////////////////////////////
+    auto vertex_buffer_data = multipleMesh2Buffer(shapes, attrib);
+    std::cout << "number of vertices " << vertex_buffer_data.size() << std::endl;
 
     // initialize GLFW
     if (!glfwInit()) {
@@ -239,36 +263,29 @@ int main() {
     // get a handle for MVP transform
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
+
     // perspective matrix
-    glm::mat4 projection ;
+    glm::mat4 projection;
 
     // camera matrix
-    glm::mat4 view ;
+    glm::mat4 view;
 
     // model matrix : identity matrix, model at origin
     glm::mat4 model = glm::mat4(1.0f);
 
-    glm::mat4 mvp ;
-
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Prepare geometry and projection for rendering
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Load vertices into a VBO
-    GLuint vertex_buffer = 0;  // Vertex buffers to store vertices
+    // prepare mesh data
+    GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0],
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data.size() * sizeof(vertex_buffer_data[0]), vertex_buffer_data.data(), GL_STATIC_DRAW);
 
-    // Load colors into a VBO
-    GLuint color_buffer = 0;   // Color buffers to store RGB
-    glGenBuffers(1, &color_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), &colors[0], GL_STATIC_DRAW);
+    // read depth
+    int x = 100;
+    int y = 100;
+    float z = 0;
+    glReadPixels(x,y,1,1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+    std::cout << "Depth value of the selecetd pixel is " << z << std::endl;
 
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Actual rendering loop
-    /////////////////////////////////////////////////////////////////////////////////////////////
     do {
         // clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -276,9 +293,9 @@ int main() {
         // use the shader
         glUseProgram(programID);
 
-        // get model view projection from the input
         computeMatricesFromInputs(projection, view);
-        mvp = projection * view * model;
+
+        glm::mat4 mvp = projection * view * model;
 
         // send transforms
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);

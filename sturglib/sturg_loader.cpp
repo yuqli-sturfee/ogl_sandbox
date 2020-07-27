@@ -555,6 +555,7 @@ bool SturgLoader::checkForSimilarVertex(SturGVertex &vertex_in, GLuint &result,
     if (!is_terrain) {
         auto vertex_map_iter = vertex_to_index_map_.find(vertex_in);
         auto end = vertex_to_index_map_.end();
+
         if (vertex_map_iter == end) {
             return false;
         } else {

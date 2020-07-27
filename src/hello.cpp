@@ -192,7 +192,8 @@ int main() {
     glm::mat4 projection = glm::make_mat4(aaa);
 
     // camera matrix
-    glm::mat4 view = glm::lookAt(glm::vec3(4, 3, -3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    glm::mat4 view = glm::lookAt(glm::vec3(4, 3, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    view = glm::translate(view, glm::vec3(1, 1, 1));
 
     // model matrix : identity matrix, model at origin
     glm::mat4 model = glm::mat4(1.0f);
