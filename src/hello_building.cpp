@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <limits>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -20,24 +19,26 @@ GLFWwindow* window;
 
 #include "shader.hpp"
 
-//#include "sturg_helper_func.hpp"
-//#include "sturg_loader.hpp"
-//#include "sturg_search_params.hpp"
 #include "tile.cpp"
 
 using namespace glm;
 
-void printVector(const std::vector<float> &vec, int start, int end) {
-    for (int i = start; i < end; i++) {
-        std::cout << vec[i] << " ";
+
+template <class T>
+void normalizeVector(std::vector<T> & vec) {
+    T val = 0;
+    for (int i = 0; i < vec.size(); i++) {
+        val = val > abs(vec[i]) ? val : abs(vec[i]);
     }
-    std::cout << std::endl;
+
+    for (int i = 0; i < vec.size(); i++) {
+        vec[i] /= val ;
+    }
 }
 
 
 // Initial position : on +Z
-//glm::vec3 position = glm::vec3( 0, 0, 5 );
-glm::vec3 position = glm::vec3( 0, 0, 0);
+glm::vec3 position = glm::vec3( 0, 0, 20);
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -118,103 +119,46 @@ void computeMatricesFromInputs(glm::mat4 & ProjectionMatrix, glm::mat4 & ViewMat
     lastTime = currentTime;
 }
 
-int main() {
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize parameters
-    //////////////////////////////////////////////////////////////////////////////////////////
 
-    // load config file
-    auto config_params = loadConfigFile("config.ini");
-
-    // read command line params
-    SturgInputParams input_params;
-    input_params.csv_file_path = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/extern_param_single.csv";
-    input_params.proj_matrix_csv_file = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/proj_matrix_portrait.csv";
-    input_params.window_origins_file = "/media/yuqiong/DATA/ogl_sandbox/assets/test_data/windows.csv";
-    input_params.center_x = 553096.755;
-    input_params.center_y = 4183086.188;
-    input_params.fov = 45;
-    input_params.scene_width = 640;
-    input_params.scene_height = 360;
-    input_params.utm_prefix = "10N";
-    input_params.radius = 500;
-    input_params.image_width = 640;
-    input_params.image_height = 360;
-
-    // update input_params with config init data
-    input_params.model_dir = config_params["geometry_models"];
-    input_params.terrain_dir = config_params["geometry_terrain"];
-
-    std::cout << "Using: " << std::endl;
-    std::cout << " > Geometry Models Dir: " << input_params.model_dir << std::endl;
-    std::cout << " > Geometry Terrain Dir: " << input_params.terrain_dir << std::endl;
-
-    std::cout << " > Win Origins File: " << input_params.window_origins_file << std::endl;
-    std::cout << " > utm prefix: " << input_params.utm_prefix << std::endl;
-
-    // parser
-    sturgSearchParamData searchParamData;
-    searchParamData.init(input_params);
-    searchParamData.process();
-
-    // get search params and other constsnt params for the scene: w,h,r etc
-    std::vector<SturgCameraParameters> cam_search_params = searchParamData.getSearchParams();
-
-#if defined(CNN) && defined(CAFFE_OUT)
-    std::vector<std::array<float, 2>> window_orig_params = searchParamData.getWindowOrigins();
-#endif
-
-    // TO DO: do not proceed of cam params size is zero
-    if (cam_search_params.empty()) {
-        std::cout << "Error: filtered cam params count is zero . exiting()";
-        return EXIT_FAILURE;
-    }
-
-    std::vector<float> proj_matrix = searchParamData.getProjMatrix();
-    printVector(proj_matrix, 0, proj_matrix.size());
-
-    /*
-    // loader
-    SturgLoader sturg_loader;
-    sturg_loader.init(input_params);
-    sturg_loader.process();
-
-    // get rendering data
-    std::vector<GLfloat> vertices = sturg_loader.getVertices();
-    std::vector<GLfloat> colors = sturg_loader.getColors();
-    std::vector<GLuint> indices = sturg_loader.getIndices();
-
-    std::cout << " >> vertices: " << vertices.size() << std::endl;
-    std::cout << " >> colors: " << colors.size() << std::endl;
-    std::cout << " >> indices: " << indices.size() << std::endl;
-
-    std::cout << "Finished!\n";
-
+void getCube(const std::vector<float> & vertices) {
     float x_min = std::numeric_limits<float>::max();
     float y_min = std::numeric_limits<float>::max();
     float z_min = std::numeric_limits<float>::max();
+    float x_max = std::numeric_limits<float>::min();
+    float y_max = std::numeric_limits<float>::min();
+    float z_max = std::numeric_limits<float>::min();
+
     for (int i = 0; i < vertices.size(); i++) {
         float x = vertices[i];
-        x_min = min(x, x_min);
+        x_min = std::min(x_min, x);
+        x_max = std::max(x_max, x);
         i++;
+
         float y = vertices[i];
-        y_min = min(y, y_min);
+        y_min = std::min(y_min, y);
+        y_max = std::max(y_max, y);
         i++;
+
         float z = vertices[i];
-        z_min = min(z, z_min);
+        z_min = std::min(z_min, z);
+        z_max = std::max(z_max, z);
+
+        std::cout << "Vertex " << x << " " << y << " " << z << std::endl;
     }
 
-    std::cout << "vertices x min " << x_min << std::endl;
-    std::cout << "vertices y min " << y_min << std::endl;
-    std::cout << "vertices z min " << z_min << std::endl;
-    */
+    std::cout << "x min :" << x_min << " x max : " << x_max << std::endl;
+    std::cout << "y min :" << y_min << " y max : " << y_max << std::endl;
+    std::cout << "z min :" << z_min << " z max : " << z_max << std::endl;
+}
+
+int main() {
 
     std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11140146925200";
-    auto vertices = readSturgBinFile(path, 0);
+//    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11185506936300";
+    auto vertex_buffer_data = readSturgBinFile(path, 0);
+    getCube(vertex_buffer_data);
 
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Initialize OpenGL
-    //////////////////////////////////////////////////////////////////////////////////////////
+    // figure out geo locations
 
     // initialize GLFW
     if (!glfwInit()) {
@@ -264,38 +208,24 @@ int main() {
     // get a handle for MVP transform
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
+
     // perspective matrix
-    glm::mat4 projection ;
+//    glm::mat4 projection;
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
     // camera matrix
-    glm::mat4 view ;
+//    glm::mat4 view;
+    glm::mat4 view = glm::lookAt(glm::vec3(149, -30, 10), glm::vec3(149, -30, 0), glm::vec3(0, 1, 0));
 
     // model matrix : identity matrix, model at origin
     glm::mat4 model = glm::mat4(1.0f);
 
-    glm::mat4 mvp ;
-
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Prepare geometry and projection for rendering
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Load vertices into a VBO
-    GLuint vertex_buffer = 0;  // Vertex buffers to store vertices
+    // prepare mesh data
+    GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0],
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data.size() * sizeof(vertex_buffer_data[0]), vertex_buffer_data.data(), GL_STATIC_DRAW);
 
-    /*
-    // Load colors into a VBO
-    GLuint color_buffer = 0;   // Color buffers to store RGB
-    glGenBuffers(1, &color_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), &colors[0], GL_STATIC_DRAW);
-     */
-
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Actual rendering loop
-    /////////////////////////////////////////////////////////////////////////////////////////////
     do {
         // clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -303,9 +233,9 @@ int main() {
         // use the shader
         glUseProgram(programID);
 
-        // get model view projection from the input
-        computeMatricesFromInputs(projection, view);
-        mvp = projection * view * model;
+//        computeMatricesFromInputs(projection, view);
+
+        glm::mat4 mvp = projection * view * model;
 
         // send transforms
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
@@ -341,7 +271,6 @@ int main() {
 
     // close OpenGL window and terminate GLFW
     glfwTerminate();
-
 
 }
 

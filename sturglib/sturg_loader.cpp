@@ -263,83 +263,6 @@ int SturgLoader::readSturgBinFile(const std::string file_name, unsigned int is_t
     return 1;
 }
 
-// int SturgLoader::readSturgBinFile(const std::string file_name, unsigned int is_terrain) {
-//     int16_t temp_a, temp_b, temp_c;
-//     uint32_t is_uint16;
-//     SturGVertex vertex;
-//     SturGFace face;
-//     SturGBuildingData temp_building;
-//     std::vector<SturGBuildingData> buildings;
-//     SturGTileMetaData bin_file_meta;
-
-//     std::ifstream tile_file(file_name, std::ios::in | std::ios::binary);
-//     if (tile_file.is_open()) {
-//         // get meta data
-//         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.version), sizeof(uint32_t));
-//         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.meta_length), sizeof(uint32_t));
-//         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.models_count), sizeof(uint32_t));
-//         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.tile_center_x), sizeof(uint32_t));
-//         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.tile_center_y), sizeof(uint32_t));
-// #ifdef VERBOSE2
-//         // display meta data for convinience
-//         displayBinaryFileMeta(bin_file_meta);
-// #endif
-//         // get models info
-//         for (uint32_t i = 0; i < bin_file_meta.models_count; i++) {
-//             tile_file.read(reinterpret_cast<char *>(&temp_building.id), sizeof(uint64_t));
-//             tile_file.read(reinterpret_cast<char *>(&temp_building.vertices_byte_length),
-//                            sizeof(uint32_t));
-//             tile_file.read(reinterpret_cast<char *>(&temp_building.faces_byte_length),
-//                            sizeof(uint32_t));
-//             tile_file.read(reinterpret_cast<char *>(&is_uint16), sizeof(uint32_t));
-//             temp_building.is_uint_16 = bool(is_uint16);
-//             temp_building.is_terrain = is_terrain;
-//             buildings.push_back(temp_building);
-//         }
-
-//         // declare an iterator to a std::vector
-//         std::vector<SturGBuildingData>::iterator iter;
-
-//         for (iter = buildings.begin(); iter != buildings.end(); iter++) {
-//             // TO DO: better refactoring for 32 bit support
-//             iter->count_vertices = uint32_t(iter->vertices_byte_length / sizeof(u_int16_t) / 3);
-
-//             for (uint32_t i = 0; i < iter->count_vertices; i++) {
-//                 tile_file.read(reinterpret_cast<char *>(&temp_a), sizeof(int16_t));
-//                 tile_file.read(reinterpret_cast<char *>(&temp_b), sizeof(int16_t));
-//                 tile_file.read(reinterpret_cast<char *>(&temp_c), sizeof(int16_t));
-//                 vertex.vertex_param[0] =
-//                     float(temp_a) / 100.0 + bin_file_meta.tile_center_x - center_x_;
-//                 vertex.vertex_param[1] =
-//                     float(temp_b) / 100.0 + bin_file_meta.tile_center_y - center_y_;
-//                 vertex.vertex_param[2] = float(temp_c) / 100.0;
-//                 iter->vertices.push_back(vertex);
-//             }
-
-//             iter->count_faces = uint32_t(iter->faces_byte_length / sizeof(int16_t) / 3);
-//             for (uint32_t i = 0; i < iter->count_faces; i++) {
-//                 tile_file.read(reinterpret_cast<char *>(&(face.face_vertex[0])),
-//                 sizeof(uint16_t));
-//                 tile_file.read(reinterpret_cast<char *>(&(face.face_vertex[1])),
-//                 sizeof(uint16_t));
-//                 tile_file.read(reinterpret_cast<char *>(&(face.face_vertex[2])),
-//                 sizeof(uint16_t));
-//                 iter->faces.push_back(face);
-//             }
-//         }
-
-//         // concatenate the buildings from the current file to the global buildings_ data
-//         buildings_.reserve(buildings_.size() + buildings.size());
-//         std::move(buildings.begin(), buildings.end(), std::inserter(buildings_,
-//         buildings_.end()));
-//         // buildings.clear();
-//         tile_file.close();
-//     } else {
-//         std::cout << "skipping file:\t" << file_name << std::endl;
-//     }
-
-//     return 1;
-// }
 
 int SturgLoader::displayBuildingsData() {
     for (const SturGBuildingData &building_iter : buildings_) {
@@ -366,6 +289,7 @@ int SturgLoader::displayBuildingsData() {
 
     return 1;
 }
+
 int SturgLoader::process() {
     processDataforRendering();
     return 1;
