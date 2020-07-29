@@ -20,10 +20,8 @@ GLFWwindow* window;
 
 #include "shader.hpp"
 
-//#include "sturg_helper_func.hpp"
-//#include "sturg_loader.hpp"
-//#include "sturg_search_params.hpp"
-#include "tile.cpp"
+#include "sturg_helper_func.hpp"
+#include "sturg_loader.hpp"
 
 using namespace glm;
 
@@ -36,8 +34,7 @@ void printVector(const std::vector<float> &vec, int start, int end) {
 
 
 // Initial position : on +Z
-//glm::vec3 position = glm::vec3( 0, 0, 5 );
-glm::vec3 position = glm::vec3( 0, 0, 0);
+glm::vec3 position = glm::vec3( 0, 0, 30 );
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -152,28 +149,10 @@ int main() {
     std::cout << " > Win Origins File: " << input_params.window_origins_file << std::endl;
     std::cout << " > utm prefix: " << input_params.utm_prefix << std::endl;
 
-    // parser
-    sturgSearchParamData searchParamData;
-    searchParamData.init(input_params);
-    searchParamData.process();
-
-    // get search params and other constsnt params for the scene: w,h,r etc
-    std::vector<SturgCameraParameters> cam_search_params = searchParamData.getSearchParams();
-
 #if defined(CNN) && defined(CAFFE_OUT)
     std::vector<std::array<float, 2>> window_orig_params = searchParamData.getWindowOrigins();
 #endif
 
-    // TO DO: do not proceed of cam params size is zero
-    if (cam_search_params.empty()) {
-        std::cout << "Error: filtered cam params count is zero . exiting()";
-        return EXIT_FAILURE;
-    }
-
-    std::vector<float> proj_matrix = searchParamData.getProjMatrix();
-    printVector(proj_matrix, 0, proj_matrix.size());
-
-    /*
     // loader
     SturgLoader sturg_loader;
     sturg_loader.init(input_params);
@@ -190,27 +169,6 @@ int main() {
 
     std::cout << "Finished!\n";
 
-    float x_min = std::numeric_limits<float>::max();
-    float y_min = std::numeric_limits<float>::max();
-    float z_min = std::numeric_limits<float>::max();
-    for (int i = 0; i < vertices.size(); i++) {
-        float x = vertices[i];
-        x_min = min(x, x_min);
-        i++;
-        float y = vertices[i];
-        y_min = min(y, y_min);
-        i++;
-        float z = vertices[i];
-        z_min = min(z, z_min);
-    }
-
-    std::cout << "vertices x min " << x_min << std::endl;
-    std::cout << "vertices y min " << y_min << std::endl;
-    std::cout << "vertices z min " << z_min << std::endl;
-    */
-
-    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11140146925200";
-    auto vertices = readSturgBinFile(path, 0);
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // Initialize OpenGL
@@ -285,13 +243,11 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &vertices[0],
                  GL_STATIC_DRAW);
 
-    /*
     // Load colors into a VBO
     GLuint color_buffer = 0;   // Color buffers to store RGB
     glGenBuffers(1, &color_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), &colors[0], GL_STATIC_DRAW);
-     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////
     // Actual rendering loop
@@ -323,7 +279,7 @@ int main() {
                 );
 
         // draw the geometry!
-        glDrawArrays(GL_TRIANGLES, 0, 12*3);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);

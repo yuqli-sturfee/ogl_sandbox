@@ -174,6 +174,8 @@ int SturgLoader::readSturgBinFile(const std::string file_name, unsigned int is_t
         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.tile_center_y), sizeof(uint32_t));
         tile_file.read(reinterpret_cast<char *>(&bin_file_meta.tile_center_z), sizeof(uint32_t));
 
+        displayBinaryFileMeta(bin_file_meta);
+
 #ifdef VERBOSE2
         // display meta data for convinience
         displayBinaryFileMeta(bin_file_meta);
@@ -313,6 +315,8 @@ int SturgLoader::processDataforRendering() {
         return 0;
     }
 
+    displayBuildingsData();
+    
 #ifdef VERBOSE
     displayBuildingsData();
 #endif

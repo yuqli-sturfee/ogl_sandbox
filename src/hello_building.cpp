@@ -38,7 +38,8 @@ void normalizeVector(std::vector<T> & vec) {
 
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 20);
+//glm::vec3 position = glm::vec3( 150, -60, 20);
+glm::vec3 position = glm::vec3( -96, 146, 20);
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
@@ -124,9 +125,10 @@ void getCube(const std::vector<float> & vertices) {
     float x_min = std::numeric_limits<float>::max();
     float y_min = std::numeric_limits<float>::max();
     float z_min = std::numeric_limits<float>::max();
-    float x_max = std::numeric_limits<float>::min();
-    float y_max = std::numeric_limits<float>::min();
-    float z_max = std::numeric_limits<float>::min();
+
+    float x_max = - x_min;
+    float y_max = - y_min;
+    float z_max = - z_min;
 
     for (int i = 0; i < vertices.size(); i++) {
         float x = vertices[i];
@@ -143,18 +145,21 @@ void getCube(const std::vector<float> & vertices) {
         z_min = std::min(z_min, z);
         z_max = std::max(z_max, z);
 
-        std::cout << "Vertex " << x << " " << y << " " << z << std::endl;
+//        std::cout << "Vertex " << x << " " << y << " " << z << std::endl;
     }
+
+    std::cout << "===============================\n";
 
     std::cout << "x min :" << x_min << " x max : " << x_max << std::endl;
     std::cout << "y min :" << y_min << " y max : " << y_max << std::endl;
     std::cout << "z min :" << z_min << " z max : " << z_max << std::endl;
 }
 
+
 int main() {
 
-    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11140146925200";
-//    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11185506936300";
+//    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11140146925200";
+    std::string path = "/media/yuqiong/DATA/ogl_sandbox/data/sample/geometry_data/10N11185506936300";
     auto vertex_buffer_data = readSturgBinFile(path, 0);
     getCube(vertex_buffer_data);
 
@@ -171,7 +176,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // open a window and create its OpenGL context
-    window = glfwCreateWindow(1024, 768, "Cube", nullptr, nullptr);
+    window = glfwCreateWindow(1000, 1000, "Cube", nullptr, nullptr);
     if (!window) {
         std::cout << "Fail to create window!" << std::endl;
     }
@@ -210,12 +215,11 @@ int main() {
 
 
     // perspective matrix
-//    glm::mat4 projection;
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(80.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
     // camera matrix
-//    glm::mat4 view;
-    glm::mat4 view = glm::lookAt(glm::vec3(149, -30, 10), glm::vec3(149, -30, 0), glm::vec3(0, 1, 0));
+//    glm::mat4 view = glm::lookAt(glm::vec3(-96, 148, 20), glm::vec3(-96, 148, 0), glm::vec3(0, 1, 0));
+    glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
     // model matrix : identity matrix, model at origin
     glm::mat4 model = glm::mat4(1.0f);
@@ -253,7 +257,7 @@ int main() {
                 );
 
         // draw the geometry!
-        glDrawArrays(GL_TRIANGLES, 0, 12*3);
+        glDrawArrays(GL_TRIANGLES, 0, vertex_buffer_data.size());
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
