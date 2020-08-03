@@ -22,6 +22,7 @@ GLFWwindow* window;
 
 #include "sturg_helper_func.hpp"
 #include "sturg_loader.hpp"
+#include "sturg_search_params.hpp"
 
 using namespace glm;
 
@@ -34,15 +35,15 @@ void printVector(const std::vector<float> &vec, int start, int end) {
 
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 30 );
+glm::vec3 position = glm::vec3( 100, 100, 50 );
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : none
 float verticalAngle = 0.0f;
 // Initial Field of View
-float initialFoV = 45.0f;
+float initialFoV = 90.0f;
 
-float speed = 3.0f; // 3 units / second
+float speed = 20.0f; // 3 units / second
 float mouseSpeed = 0.005f;
 
 
@@ -149,9 +150,16 @@ int main() {
     std::cout << " > Win Origins File: " << input_params.window_origins_file << std::endl;
     std::cout << " > utm prefix: " << input_params.utm_prefix << std::endl;
 
-#if defined(CNN) && defined(CAFFE_OUT)
-    std::vector<std::array<float, 2>> window_orig_params = searchParamData.getWindowOrigins();
-#endif
+
+
+
+
+
+
+
+
+
+
 
     // loader
     SturgLoader sturg_loader;
@@ -169,6 +177,17 @@ int main() {
 
     std::cout << "Finished!\n";
 
+    for (int i = 0; i < 60; i++) {
+        std::cout << indices.at(i) << " ";
+        i++;
+        std::cout << indices.at(i) << " ";
+        i++;
+        std::cout << indices.at(i) << " ";
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // Initialize OpenGL
@@ -185,7 +204,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // open a window and create its OpenGL context
-    window = glfwCreateWindow(1024, 768, "Cube", nullptr, nullptr);
+    window = glfwCreateWindow(1000, 1000, "Cube", nullptr, nullptr);
     if (!window) {
         std::cout << "Fail to create window!" << std::endl;
     }
@@ -249,6 +268,14 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), &colors[0], GL_STATIC_DRAW);
 
+
+    // Generate a buffer for the indices
+    GLuint elementbuffer;
+    glGenBuffers(1, &elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+
     /////////////////////////////////////////////////////////////////////////////////////////////
     // Actual rendering loop
     /////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,8 +305,16 @@ int main() {
                 (void*) 0
                 );
 
-        // draw the geometry!
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        // Index buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+        // Draw the triangles !
+        glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_INT,   // type
+                (void*)0           // element array buffer offset
+        );
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
