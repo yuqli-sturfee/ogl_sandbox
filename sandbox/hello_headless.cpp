@@ -221,6 +221,16 @@ void createTexture(GLuint& texture, unsigned int width, unsigned int height) {
 }
 
 
+void assertEGLError(const std::string& msg) {
+    EGLint error = eglGetError();
+
+    if (error != EGL_SUCCESS) {
+        std::stringstream s;
+        s << "EGL error 0x" << std::hex << error << " at " << msg;
+        throw std::runtime_error(s.str());
+    }
+}
+
 void setUpGL() {
     int deviceID = 0;  // TODO hardcode
     static const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
