@@ -307,7 +307,6 @@ void setUpGL() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE);
 
-    return 1;
 }
 
 //
