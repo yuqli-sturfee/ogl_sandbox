@@ -4,6 +4,7 @@
 // Include standard headers
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 
 #include <iostream>
 #include <string>
