@@ -21,7 +21,7 @@ find_package(OpenCV REQUIRED)
 
 #find_package(CUDA REQUIRED)
 
-add_executable (sandbox "hello.cpp" "shader.cpp")
+add_executable (sandbox "hello_headless.cpp" "shader.cpp")
 #add_executable (sandbox "hello-no-fbo.cpp" "shader.cpp")
 #add_executable (sandbox "hello-pbo.cpp" "shader.cpp")
 
