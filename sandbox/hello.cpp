@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/opencv.hpp>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -369,14 +371,22 @@ int main() {
         // Draw the triangle !
         glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles
 
-        // read back and render
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // read pixels and write to file
+        unsigned char *buffer = new unsigned char[image_width * image_height * 3];
 
-        glDisable(GL_DEPTH_TEST);
-        glBindTexture(GL_TEXTURE_2D, texture_);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glReadPixels(0, 0, image_width, image_height, GL_BGR, GL_UNSIGNED_BYTE, buffer);
+
+        cv::Mat image(image_height, image_width, CV_8UC3, buffer);
+        cv::flip(image, image, 0);
+
+        if ( !image.data )
+        {
+            printf("No image data \n");
+            return -1;
+        }
+
+        cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
+        cv::imwrite("filename.jpg", image);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
