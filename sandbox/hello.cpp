@@ -10,10 +10,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <cuda.h>
-#include <cuda_gl_interop.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
+//#include <cuda.h>
+//#include <cuda_gl_interop.h>
+//#include <cuda_runtime.h>
+//#include <cuda_runtime_api.h>
 
 GLFWwindow* window;
 
@@ -122,8 +122,6 @@ static const GLfloat g_color_buffer_data[] = {
     };
 
 
-
-
 void deleteFramebuffer(GLuint &frame_buffer) {
     if (frame_buffer != 0) {
         glDeleteFramebuffers(1, &frame_buffer);
@@ -204,14 +202,14 @@ void createTexture(GLuint& texture, unsigned int width, unsigned int height) {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
+    // Create texture data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, COLOR_FMT, GL_FLOAT, NULL);
+
     // set basic parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // Create texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, COLOR_FMT, GL_FLOAT, NULL);
 
     // Unbind the texture
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -283,11 +281,6 @@ void createColorBuffer() {
 
 
 int main() {
-
-    cudaSetDevice(0);
-    cudaDeviceReset();
-
-    cudaGLSetGLDevice(0);
 
     // prepare for openGL
     setUpGL();

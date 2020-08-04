@@ -21,9 +21,9 @@ find_package(OpenCV REQUIRED)
 
 #find_package(CUDA REQUIRED)
 
-#cuda_add_executable (sandbox "hello.cpp" "shader.cpp")
+add_executable (sandbox "hello.cpp" "shader.cpp")
 #add_executable (sandbox "hello-no-fbo.cpp" "shader.cpp")
-add_executable (sandbox "hello-pbo.cpp" "shader.cpp")
+#add_executable (sandbox "hello-pbo.cpp" "shader.cpp")
 
 target_link_libraries(sandbox glfw GLEW::GLEW ${OPENGL_LIBRARIES} ${OpenCV_LIBS})
 
