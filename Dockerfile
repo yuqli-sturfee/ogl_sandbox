@@ -49,8 +49,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cuda-samples-9-1  && \
     rm -rf /var/lib/apt/lists/*
 
-#RUN git clone https://github.com/g-truc/glm.git
-#RUN cd glm;mkdir glm_build;cd glm_build;cmake ..;make;
 RUN apt-get update && apt-get install libglm-dev
 
 RUN git clone -b glew-2.1.0 https://github.com/nigels-com/glew.git
@@ -94,7 +92,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # **********************************************************
 
 # update cmake to find EGL
-RUN apt remove cmake
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1.tar.gz
 RUN tar -xzf cmake-3.18.1.tar.gz; cd cmake-3.18.1; mkdir build; cd build;
 RUN cmake ../; make; make install; cd /; rm -r cmake-3.18.1*
