@@ -94,5 +94,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # update cmake to find EGL
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.1/cmake-3.18.1.tar.gz
 RUN tar -xzf cmake-3.18.1.tar.gz; cd cmake-3.18.1; mkdir build; cd build;
+WORKDIR /cmake-3.18.1/build
 RUN cmake ../; make; make install; cd /; rm -r cmake-3.18.1*
 
