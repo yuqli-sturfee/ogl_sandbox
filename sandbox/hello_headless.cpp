@@ -3,6 +3,8 @@
 //
 // Include standard headers
 
+#include <opencv2/opencv.hpp>
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
@@ -10,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <opencv2/opencv.hpp>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -232,7 +233,7 @@ void assertEGLError(const std::string& msg) {
 }
 
 void setUpGL() {
-    int deviceID = 0;  // TODO hardcode
+//    int deviceID = 0;  // TODO hardcode
     static const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
                                            EGL_PBUFFER_BIT,
                                            EGL_BLUE_SIZE,
@@ -247,28 +248,30 @@ void setUpGL() {
                                            EGL_OPENGL_BIT,
                                            EGL_NONE};
 
-    /*
-     * EGL initialization and OpenGL context creation.
-     */
+//    /*
+//     * EGL initialization and OpenGL context creation.
+//     */
+
     EGLDisplay display;
     EGLConfig config;
     EGLContext context;
     EGLint num_config;
-
-    static const int MAX_DEVICES = 16;
-    EGLDeviceEXT eglDevs[MAX_DEVICES];
-    EGLint numDevices;
-
-    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
-            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
-
-    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-    printf("Detected %d devices\n", numDevices);
-    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
-            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+//
+//    static const int MAX_DEVICES = 16;
+//    EGLDeviceEXT eglDevs[MAX_DEVICES];
+//    EGLint numDevices;
+//
+//    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+//            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+//
+//    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+//    printf("Detected %d devices\n", numDevices);
+//    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+//            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
 
     // Choose device by deviceID
-    display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
+//    display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     assertEGLError("eglGetDisplay");
 

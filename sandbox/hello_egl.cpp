@@ -5,6 +5,10 @@
 
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 static const EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -25,10 +29,49 @@ static const EGLint pbufferAttribs[] = {
         EGL_NONE,
 };
 
+
+void assertEGLError(const std::string& msg) {
+    EGLint error = eglGetError();
+
+    if (error != EGL_SUCCESS) {
+        std::stringstream s;
+        s << "EGL error 0x" << std::hex << error << " at " << msg;
+        throw std::runtime_error(s.str());
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
     // 1. Initialize EGL
-    EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+//    EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+    int deviceID = 0;  // TODO hardcode
+
+    EGLDisplay eglDpy;
+    EGLConfig config;
+    EGLContext context;
+    EGLint num_config;
+
+    static const int MAX_DEVICES = 16;
+    EGLDeviceEXT eglDevs[MAX_DEVICES];
+    EGLint numDevices;
+
+    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+
+    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+    printf("Detected %d devices\n", numDevices);
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+
+    // Choose device by deviceID
+    eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
+
+
+
+
+    assertEGLError("eglGetDisplay");
 
     EGLint major, minor;
 
