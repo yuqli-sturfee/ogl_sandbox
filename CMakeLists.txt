@@ -16,24 +16,20 @@ find_package(glfw3 REQUIRED)
 # Add GLEW
 find_package(GLEW REQUIRED)
 
-#include_directories("${CMAKE_SOURCE_DIR}/sturglib")
+include_directories("${CMAKE_SOURCE_DIR}/sturglib")
+#include_directories("${CMAKE_SOURCE_DIR}/io")
 
-#file(GLOB STURG_SOURCES
-#        "sturglib/*.h*"
-#        "sturglib/*.cpp"
-#        "sturglib/*.cu"
-#        )
+file(GLOB STURG_SOURCES
+        "sturglib/*.h*"
+        "sturglib/*.cpp"
+        "sturglib/*.cu"
+        )
 
-#add_executable (sandbox "src/render.cpp" ${STURG_SOURCES} "src/shader.cpp" "src/shader.hpp")
-add_executable (sandbox "src/hello.cpp" "src/shader.cpp" "src/shader.hpp")
-
-target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW )
-
-# Add objloader
-#add_subdirectory(tinyobjloader)
-
-#add_executable (sandbox src/render.cpp src/shader.hpp src/shader.cpp)
+#add_executable (sandbox "src/render.cpp" ${STURG_SOURCES} "src/shader.cpp")
+add_executable (sandbox "src/sandbox_cam_search.cpp" ${STURG_SOURCES} )
 
 #target_link_libraries(sandbox ${OPENGL_LIBRARIES} glfw  GLEW::GLEW )
+set_target_properties(sandbox PROPERTIES CXX_STANDARD 11)
 
-#set_target_properties(sandbox PROPERTIES CXX_STANDARD 11)
+
+

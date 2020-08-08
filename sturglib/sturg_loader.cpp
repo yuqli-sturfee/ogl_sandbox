@@ -316,7 +316,7 @@ int SturgLoader::processDataforRendering() {
     }
 
     displayBuildingsData();
-    
+
 #ifdef VERBOSE
     displayBuildingsData();
 #endif

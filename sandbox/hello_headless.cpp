@@ -14,14 +14,11 @@
 
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 //#include <cuda.h>
 //#include <cuda_gl_interop.h>
 //#include <cuda_runtime.h>
 //#include <cuda_runtime_api.h>
-
-GLFWwindow* window;
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -37,7 +34,6 @@ using namespace glm;
 #define COLOR_FMT GL_RGBA
 #define COLOR_FMT_SIZE 16
 
-GLFWwindow* window_;
 GLuint frame_buffer_ = 0;   // Frame buffer object
 GLuint depth_buffer_ = 0;   // Depth buffer to attach to frame buffer
 GLuint texture_ = 0;        // Depth buffer to attach to frame buffer
@@ -232,8 +228,28 @@ void assertEGLError(const std::string& msg) {
     }
 }
 
-void setUpGL() {
-//    int deviceID = 0;  // TODO hardcode
+
+void createVertexBuffer() {
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+}
+
+
+void createColorBuffer() {
+    glGenBuffers(1, &color_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+}
+
+
+
+/***************************************************************************************************
+ *   Set up context
+***************************************************************************************************/
+
+int setUpGL() {
+    int deviceID = 0;  // TODO hardcode
     static const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
                                            EGL_PBUFFER_BIT,
                                            EGL_BLUE_SIZE,
@@ -248,30 +264,28 @@ void setUpGL() {
                                            EGL_OPENGL_BIT,
                                            EGL_NONE};
 
-//    /*
-//     * EGL initialization and OpenGL context creation.
-//     */
-
+    /*
+     * EGL initialization and OpenGL context creation.
+     */
     EGLDisplay display;
     EGLConfig config;
     EGLContext context;
     EGLint num_config;
-//
-//    static const int MAX_DEVICES = 16;
-//    EGLDeviceEXT eglDevs[MAX_DEVICES];
-//    EGLint numDevices;
-//
-//    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
-//            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
-//
-//    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-//    printf("Detected %d devices\n", numDevices);
-//    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
-//            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+
+    static const int MAX_DEVICES = 16;
+    EGLDeviceEXT eglDevs[MAX_DEVICES];
+    EGLint numDevices;
+
+    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+
+    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+    printf("Detected %d devices\n", numDevices);
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
 
     // Choose device by deviceID
-//    display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
-    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
 
     assertEGLError("eglGetDisplay");
 
@@ -303,8 +317,96 @@ void setUpGL() {
     printf("Renderer: %s\n", renderer);
     printf("OpenGL version supported %s\n", version);
 
-    // Ensure we capture the escape key being pressed
-    glfwSetInputMode(window_, GLFW_STICKY_KEYS, GL_TRUE);
+    // Black background
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    // Enable depth test
+    glEnable(GL_DEPTH_TEST);
+
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LEQUAL);
+
+    // glDisable(GL_BLEND);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glDisable(GL_CULL_FACE);
+
+    return 1;
+
+}
+
+
+int main() {
+
+//    setUpGL();
+
+    int deviceID = 0;  // TODO hardcode
+    static const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
+                                           EGL_PBUFFER_BIT,
+                                           EGL_BLUE_SIZE,
+                                           8,
+                                           EGL_GREEN_SIZE,
+                                           8,
+                                           EGL_RED_SIZE,
+                                           8,
+                                           EGL_DEPTH_SIZE,
+                                           8,
+                                           EGL_RENDERABLE_TYPE,
+                                           EGL_OPENGL_BIT,
+                                           EGL_NONE};
+
+    /*
+     * EGL initialization and OpenGL context creation.
+     */
+    EGLDisplay display;
+    EGLConfig config;
+    EGLContext context;
+    EGLint num_config;
+
+    static const int MAX_DEVICES = 16;
+    EGLDeviceEXT eglDevs[MAX_DEVICES];
+    EGLint numDevices;
+
+    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+            (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+
+    eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+    printf("Detected %d devices\n", numDevices);
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+            (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+
+    // Choose device by deviceID
+    display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[deviceID], nullptr);
+
+    assertEGLError("eglGetDisplay");
+
+    eglInitialize(display, nullptr, nullptr);
+    assertEGLError("eglInitialize");
+
+    eglChooseConfig(display, configAttribs, &config, 1, &num_config);
+    assertEGLError("eglChooseConfig");
+
+    eglBindAPI(EGL_OPENGL_API);
+    assertEGLError("eglBindAPI");
+    context = eglCreateContext(display, config, EGL_NO_CONTEXT, nullptr);
+    assertEGLError("eglCreateContext");
+
+    eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
+    assertEGLError("eglMakeCurrent");
+
+    // Initialize GLEW
+    glewExperimental = static_cast<GLboolean>(true);  // Needed for core profile
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "[IGNORE IT] Failed to initialize GLEW\n");
+    }
+
+    // get version info
+    // get renderer std::string
+    const GLubyte* renderer = glGetString(GL_RENDERER);
+    // version as a std::string
+    const GLubyte* version = glGetString(GL_VERSION);
+    printf("Renderer: %s\n", renderer);
+    printf("OpenGL version supported %s\n", version);
 
     // Black background
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -320,77 +422,25 @@ void setUpGL() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE);
 
-}
-
-//
-//
-//int setUpGL() {
-//    // Initialise GLFW
-//    if( !glfwInit() )
-//    {
-//        fprintf( stderr, "Failed to initialize GLFW\n" );
-//        getchar();
-//        return -1;
-//    }
-//
-//    glfwWindowHint(GLFW_SAMPLES, 4);
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-//    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-//
-//    // Open a window and create its OpenGL context
-//    window = glfwCreateWindow( 1024, 768, "Tutorial 04 - Colored Cube", NULL, NULL);
-//    if( window == NULL ){
-//        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-//        getchar();
-//        glfwTerminate();
-//        return -1;
-//    }
-//    glfwMakeContextCurrent(window);
-//
-//    // Initialize GLEW
-//    glewExperimental = true; // Needed for core profile
-//    if (glewInit() != GLEW_OK) {
-//        fprintf(stderr, "Failed to initialize GLEW\n");
-//        getchar();
-//        glfwTerminate();
-//        return -1;
-//    }
-//
-//    // Ensure we can capture the escape key being pressed below
-//    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-//
-//    // Dark blue background
-//    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-//
-//    // Enable depth test
-//    glEnable(GL_DEPTH_TEST);
-//    // Accept fragment if it closer to the camera than the former one
-//    glDepthFunc(GL_LESS);
-//
-//    return 0;
-//}
 
 
-void createVertexBuffer() {
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-}
 
 
-void createColorBuffer() {
-    glGenBuffers(1, &color_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
-}
 
 
-int main() {
 
-    // prepare for openGL
-    setUpGL();
+
+
+
+
+
+
+
+
+
+
+
+
 
     createTexture(texture_, image_width, image_height);
 
@@ -428,81 +478,75 @@ int main() {
 
     createColorBuffer();
 
-    do{
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Use our shader
-        glUseProgram(programID);
-
-        // Send our transformation to the currently bound shader,
-        // in the "MVP" uniform
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glVertexAttribPointer(
-                0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-        );
-
-        // 2nd attribute buffer : colors
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-        glVertexAttribPointer(
-                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-                3,                                // size
-                GL_FLOAT,                         // type
-                GL_FALSE,                         // normalized?
-                0,                                // stride
-                (void*)0                          // array buffer offset
-        );
+    // EGL rendering ...
 
 
-        // unbind for now
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    // Clear the screen
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, image_width, image_height);
+    // Use our shader
+    glUseProgram(programID);
 
-        // set rendering destination to frame buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
+    // Send our transformation to the currently bound shader,
+    // in the "MVP" uniform
+    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(
+            0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+    );
 
-        // read pixels and write to file
-        unsigned char *buffer = new unsigned char[image_width * image_height * 3];
+    // 2nd attribute buffer : colors
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glVertexAttribPointer(
+            1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+    );
 
-        glReadPixels(0, 0, image_width, image_height, GL_BGR, GL_UNSIGNED_BYTE, buffer);
 
-        cv::Mat image(image_height, image_width, CV_8UC3, buffer);
-        cv::flip(image, image, 0);
+    // unbind for now
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
-        if ( !image.data )
-        {
-            printf("No image data \n");
-            return -1;
-        }
+    glViewport(0, 0, image_width, image_height);
 
-        cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
-        cv::imwrite("filename.jpg", image);
+    // set rendering destination to frame buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
 
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+    // Draw the triangle !
+    glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles
 
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+    // read pixels and write to file
+    unsigned char *buffer = new unsigned char[image_width * image_height * 3];
 
-    } // Check if the ESC key was pressed or the window was closed
-    while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
-           glfwWindowShouldClose(window) == 0 );
+    glReadPixels(0, 0, image_width, image_height, GL_BGR, GL_UNSIGNED_BYTE, buffer);
+
+    cv::Mat image(image_height, image_width, CV_8UC3, buffer);
+    cv::flip(image, image, 0);
+
+    if ( !image.data )
+    {
+        printf("No image data \n");
+        return -1;
+    }
+
+    cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
+    cv::imwrite("filename.jpg", image);
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+
 
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertex_buffer);
@@ -510,8 +554,13 @@ int main() {
     glDeleteProgram(programID);
     glDeleteVertexArrays(1, &VertexArrayID);
 
-    // Close OpenGL window and terminate GLFW
-    glfwTerminate();
+    // Close OpenGL window and terminate EGL
+    eglDestroyContext(display, context);
+    assertEGLError("eglDestroyContext");
+
+    eglTerminate(display);
+    assertEGLError("eglTerminate");
+
 
     return 0;
 }

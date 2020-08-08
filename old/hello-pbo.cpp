@@ -12,11 +12,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-//#include <cuda.h>
-//#include <cuda_gl_interop.h>
-//#include <cuda_runtime.h>
-//#include <cuda_runtime_api.h>
-
 GLFWwindow* window;
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -34,9 +29,7 @@ using namespace glm;
 #define COLOR_FMT_SIZE 16
 
 GLFWwindow* window_;
-GLuint frame_buffer_ = 0;   // Frame buffer object
-GLuint depth_buffer_ = 0;   // Depth buffer to attach to frame buffer
-GLuint texture_ = 0;        // Depth buffer to attach to frame buffer
+
 GLuint vertex_buffer = 0;  // Vertex buffers to store vertices
 GLuint color_buffer = 0;   // Color buffers to store RGB
 
@@ -124,98 +117,6 @@ static const GLfloat g_color_buffer_data[] = {
     };
 
 
-void deleteFramebuffer(GLuint &frame_buffer) {
-    if (frame_buffer != 0) {
-        glDeleteFramebuffers(1, &frame_buffer);
-        frame_buffer = 0;
-    }
-}
-
-void createFramebuffer(GLuint &frame_buffer, GLuint color_attachment0, GLuint depth_attachment) {
-    deleteFramebuffer(frame_buffer);
-
-    glGenFramebuffers(1, &frame_buffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-
-    // attach 2D texture to FBO
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_attachment0, 0);
-
-    // attach depth buffer to FBO
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_attachment);
-
-    // does GPU support the current FBO configuration?
-    GLenum frame_buffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-    if (frame_buffer_status != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "There is a problem with the frame buffer" << std::endl
-                  << "frame buffer cannot be created" << std::endl;
-    }
-
-    // black background
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
-    glClearDepth(1.0f);
-
-    // enable depth test
-    glEnable(GL_DEPTH_TEST);
-
-    // accept fragment if it's closer to the screen
-    glDepthFunc(GL_LEQUAL);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glDisable(GL_CULL_FACE);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-
-
-void deleteDepthBuffer(GLuint& depth_buffer) {
-    if (depth_buffer != 0) {
-        glDeleteRenderbuffers(1, &depth_buffer);
-        depth_buffer = 0;
-    }
-}
-
-void createDepthBuffer(GLuint& depth_buffer, unsigned int width, unsigned int height) {
-    // Delete depth buffer if it already exists
-    deleteDepthBuffer(depth_buffer);
-
-    glGenRenderbuffers(1, &depth_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-
-    // Unbind the depth buffer
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-}
-
-void deleteTexture(GLuint& texture) {
-    if (texture != 0) {
-        glDeleteTextures(1, &texture);
-        texture = 0;
-    }
-}
-void createTexture(GLuint& texture, unsigned int width, unsigned int height) {
-    // Delete texture if it already exists
-    deleteTexture(texture);
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // Create texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, COLOR_FMT, GL_FLOAT, NULL);
-
-    // set basic parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // Unbind the texture
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
 
 
 
@@ -235,7 +136,7 @@ int setUpGL() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow( 1024, 768, "Tutorial 04 - Colored Cube", NULL, NULL);
+    window = glfwCreateWindow( image_width, image_height, "Tutorial 04 - Colored Cube", NULL, NULL);
     if( window == NULL ){
         fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
         getchar();
@@ -287,12 +188,6 @@ int main() {
     // prepare for openGL
     setUpGL();
 
-    createTexture(texture_, image_width, image_height);
-
-    createDepthBuffer(depth_buffer_, image_width, image_height);
-
-    createFramebuffer(frame_buffer_, texture_, depth_buffer_);
-
     glViewport(0, 0, image_width, image_height);
 
     GLuint programID = LoadShaders( "TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader" );
@@ -315,68 +210,96 @@ int main() {
     glm::mat4 MVP        = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
     /********************************* MVP matrices end **************************************/
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
 
     createVertexBuffer();
 
     createColorBuffer();
+
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    // 1rst attribute buffer : vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glVertexAttribPointer(
+            0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+    );
+
+    // 2nd attribute buffer : colors
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+    glVertexAttribPointer(
+            1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+            3,                                // size
+            GL_FLOAT,                         // type
+            GL_FALSE,                         // normalized?
+            0,                                // stride
+            (void*)0                          // array buffer offset
+    );
+
+    // Create PBO
+    GLuint pixel_buffers[2];
+    glGenBuffers(2, pixel_buffers);
+
+    // first pbo
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel_buffers[0]);
+    glBufferData(GL_PIXEL_PACK_BUFFER, image_width * image_height * 8, 0, GL_STATIC_READ);
+    // second pbo
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel_buffers[1]);
+    glBufferData(GL_PIXEL_PACK_BUFFER, image_width * image_height * 8, 0, GL_STATIC_READ);
+
+    int write_index = 0;
+    int read_index = 1;
+
+    // unbind for now
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    // Use our shader
+    glUseProgram(programID);
+
+    // Send our transformation to the currently bound shader,
+    // in the "MVP" uniform
+    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
     do{
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use our shader
-        glUseProgram(programID);
-
-        // Send our transformation to the currently bound shader,
-        // in the "MVP" uniform
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glVertexAttribPointer(
-                0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-        );
-
-        // 2nd attribute buffer : colors
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
-        glVertexAttribPointer(
-                1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-                3,                                // size
-                GL_FLOAT,                         // type
-                GL_FALSE,                         // normalized?
-                0,                                // stride
-                (void*)0                          // array buffer offset
-        );
-
-
-        // unbind for now
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-        glViewport(0, 0, image_width, image_height);
-
-        // set rendering destination to frame buffer
-        glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_);
-
         // Draw the triangle !
         glDrawArrays(GL_TRIANGLES, 0, 12*3); // 12*3 indices starting at 0 -> 12 triangles
 
-        // read pixels and write to file
-        unsigned char *buffer = new unsigned char[image_width * image_height * 3];
+        // alternatively work with pbos
+        write_index = (write_index + 1) % 2;
+        read_index = (read_index + 1) % 2;
 
-        glReadPixels(0, 0, image_width, image_height, GL_BGR, GL_UNSIGNED_BYTE, buffer);
+        // write data to pbo
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel_buffers[write_index]);
 
-        cv::Mat image(image_height, image_width, CV_8UC3, buffer);
+        // glReadPixels behaves differently
+        glReadPixels(0, 0, image_width, image_height, COLOR_FMT, GL_UNSIGNED_BYTE, 0);
+
+        // process the data in previous frame's pbo
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pixel_buffers[read_index]);
+
+        // map the pbo to process its data on cpu
+        GLubyte *ptr = (GLubyte*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+        if (!ptr) {
+            std::cout << "Error! PBO read back empty!" << std::endl;
+        }
+
+        glUnmapBuffer(pixel_buffers[read_index]);
+
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+
+        cv::Mat image(image_height, image_width, CV_8UC4, ptr);
         cv::flip(image, image, 0);
 
         if ( !image.data )
@@ -386,7 +309,9 @@ int main() {
         }
 
         cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
-        cv::imwrite("filename.jpg", image);
+        cv::imshow("Display Image", image);
+
+        cv::waitKey(0);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
